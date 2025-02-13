@@ -1,0 +1,49 @@
+---
+- name: Deploy Nginx container using Podman
+  hosts: all
+  become: true
+  tasks:
+    - name: Create directory for nginx configuration
+      file:
+        path: /etc/nginx/conf.d
+        state: directory
+        mode: '0755'
+
+    - name: Pull nginx image
+      containers.podman.podman_image:
+        name: docker.io/masanara/utils:0.4
+        force: true
+        state: present
+
+    - name: Create and start nginx container
+      containers.podman.podman_container:
+        name: nginx-server
+        image: docker.io/masanara/utils:0.4
+        state: started
+        ports:
+          - "8888:80"
+        restart_policy: always
+        generate_systemd:
+          path: /etc/systemd/system
+          restart_policy: always
+          names: true
+
+    - name: Enable and start systemd service
+      systemd:
+        name: container-nginx-server
+        enabled: yes
+        state: started
+        daemon_reload: yes
+
+    - name: Add ports to firewall
+      firewalld:
+        port: "8888/tcp"
+        state: enabled
+        immediate: true
+        permanent: true
+      become: yes
+
+    - name: Reload firewalld
+      ansible.builtin.service:
+        name: firewalld
+        state: reloaded
