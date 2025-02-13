@@ -4,7 +4,7 @@ build_arg_defaults:
   ANSIBLE_GALAXY_CLI_COLLECTION_OPTS: '--pre'
 
 dependencies: 
-  galaxy: requirements.yaml
+  galaxy: requirements.yml
 
 images: 
   base_image:
