@@ -3,25 +3,19 @@
   hosts: all
   become: true
   tasks:
-    - name: Create directory for nginx configuration
-      file:
-        path: /etc/nginx/conf.d
-        state: directory
-        mode: '0755'
-
     - name: Pull nginx image
       containers.podman.podman_image:
-        name: docker.io/masanara/utils:0.4
+        name: "{{ container_image | default('docker.io/library/nginx') }}:{{ container_tag | default('latest') }}"
         force: true
         state: present
 
     - name: Create and start nginx container
       containers.podman.podman_container:
         name: nginx-server
-        image: docker.io/masanara/utils:0.4
+        image: "{{ container_image | default('docker.io/library/nginx') }}:{{ container_tag | default('latest') }}"
         state: started
         ports:
-          - "8888:80"
+          - "{{ host_port }}:80"
         restart_policy: always
         generate_systemd:
           path: /etc/systemd/system
@@ -35,9 +29,9 @@
         state: started
         daemon_reload: yes
 
-    - name: Add ports to firewall
+    - name: Add {{ host_port }} ports to firewall
       firewalld:
-        port: "8888/tcp"
+        port: "{{ host_port }}/tcp"
         state: enabled
         immediate: true
         permanent: true
